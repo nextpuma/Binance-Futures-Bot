@@ -277,16 +277,14 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     #                       _callbackRate=_callbackRate)
 
     take_profit_price = round(entry_price * ((100 + _take_profit) / 100), 0)
-    take_profit_side = "SELL" if order_side == "BUY" else "BUY"
-    execute_limit_order(client, entry_price, take_profit_price, qty,  _market=market, _type="TAKE_PROFIT", _side=take_profit_side)
+    execute_limit_order(client, entry_price, take_profit_price, qty,  _market=market, _type="TAKE_PROFIT", _side=stop_side)
     singlePrint(f"Take Profit ${take_profit_price} is created", std)
 
     time.sleep(3)
 
     stop_loss_price = round(entry_price * ((100 - _stop_loss) / 100), 0)
-    stop_loss_side = "SELL" if order_side == "BUY" else "BUY"
     execute_limit_order(client, entry_price, stop_loss_price, qty, _market=market, _type="STOP",
-                        _side=stop_loss_side)
+                        _side=stop_side)
     singlePrint(f"Stop Loss ${stop_loss_price} is created", std)
 
     return qty, side, in_position
