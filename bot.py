@@ -41,7 +41,7 @@ while True:
 
             # generate signal data for the last 1000 candles
             entry = bf.get_multi_scale_signal(client, _market=market, _periods=confirmation_periods)
-            entry = 1
+            # entry = 1
 
             # if the entry is -1, then open a SHORT
             if entry == -1:
