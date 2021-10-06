@@ -253,6 +253,8 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     execute_order(client, _qty=qty, _side=order_side, _market=market)
     blockPrint()
 
+    time.sleep(3)
+
     entry_price = get_specific_positon(client, market).entryPrice
 
     side = -1
@@ -272,19 +274,17 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
               _market_price=entry_price, _type=order_side)
 
     # Let the order execute and then create a trailing stop market order.
-    time.sleep(3)
     # submit_trailing_order(client, _market=market, _qty=qty, _side=stop_side,
     #                       _callbackRate=_callbackRate)
 
     take_profit_price = round(entry_price * ((100 + _take_profit) / 100), 0)
-    execute_limit_order(client, entry_price, take_profit_price, qty,  _market=market, _type="TAKE_PROFIT", _side=stop_side)
+    execute_limit_order(client, entry_price, take_profit_price, qty, _market=market, _type="TAKE_PROFIT", _side=stop_side)
     singlePrint(f"Take Profit ${take_profit_price} is created", std)
 
     time.sleep(3)
 
     stop_loss_price = round(entry_price * ((100 - _stop_loss) / 100), 0)
-    execute_limit_order(client, entry_price, stop_loss_price, qty, _market=market, _type="STOP",
-                        _side=stop_side)
+    execute_limit_order(client, entry_price, stop_loss_price, qty, _market=market, _type="STOP", _side=stop_side)
     singlePrint(f"Stop Loss ${stop_loss_price} is created", std)
 
     return qty, side, in_position
@@ -481,6 +481,7 @@ def get_multi_scale_signal(client, _market="BTCUSDT", _periods=["1m"]):
     for i, v in enumerate(_periods):
         _signal = get_signal(client, _market, _period=v, use_last=use_last)
         signal = signal + _signal
+        time.sleep(3)
 
     signal = signal / len(_periods)
 
