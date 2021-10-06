@@ -1,3 +1,5 @@
+import math
+
 from binance_f import RequestClient
 from binance_f.constant.test import *
 from binance_f.base.printobject import *
@@ -8,6 +10,7 @@ import numpy as np
 import time
 import sys, os
 import config as cfg
+from decimal import Decimal, getcontext, ROUND_DOWN
 
 
 def getStdOut():
@@ -126,13 +129,25 @@ def execute_order(client, _market="BTCUSDT", _type="MARKET", _side="BUY", _posit
                       quantity=_qty)
 
 
-def execute_limit_order(client, _price, _stop_price, _qty, _market="BTCUSDT", _type="TAKE_PROFIT", _side="SELL"):
+def execute_market_order(client, _price, _stop_price, _qty, _market, _type, _side="SELL"):
+    client.post_order(symbol=_market,
+                      ordertype=_type,
+                      side=_side,
+                      stopPrice=_stop_price,
+                      workingType=WorkingType.MARK_PRICE,
+                      closePosition=True
+                      )
+
+
+def execute_limit_order(client, _stop_price, _qty, _market="BTCUSDT", _type="LIMIT", _side="SELL",
+                        time_in_force=TimeInForce.GTC, reduce_only=True):
     client.post_order(symbol=_market,
                       ordertype=_type,
                       side=_side,
                       quantity=_qty,
-                      price=_price,
-                      stopPrice=_stop_price)
+                      price=_stop_price,
+                      timeInForce=time_in_force,
+                      reduceOnly=reduce_only)
 
 
 # calculate how big a position we can open with the margin we have and the leverage we are using
@@ -183,6 +198,16 @@ def get_market_precision(client, _market="BTCUSDT"):
     for market in market_data.symbols:
         if market.symbol == _market:
             precision = market.quantityPrecision
+            break
+    return precision
+
+
+def get_price_precision(client, _market="BTCUSDT"):
+    market_data = client.get_exchange_information()
+    precision = 2
+    for market in market_data.symbols:
+        if market.symbol == _market:
+            precision = market.pricePrecision
             break
     return precision
 
@@ -238,8 +263,16 @@ def construct_heikin_ashi(o, h, l, c):
     return h_o, h_h, h_l, h_c
 
 
+def get_str_decimal(count):
+    return '.' + '0' * (count - 1) + '1'
+
+
+def get_decimal_value(value, price_precision):
+    return Decimal(str(value)).quantize(Decimal(get_str_decimal(price_precision)), rounding=ROUND_DOWN)
+
+
 def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
-                  stop_side="SELL",  _take_profit=4.0, _stop_loss=5.0):
+                  stop_side="SELL", take_profit=4.0, stop_loss=5.0):
     initialise_futures(client, _market=market, _leverage=leverage)
 
     # close any open trailing stops we have
@@ -250,12 +283,16 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     qty = calculate_position(client, market, _leverage=leverage)
 
     enablePrint(std)
+
+    """ ******** ENTERING POSITION ********* """
     execute_order(client, _qty=qty, _side=order_side, _market=market)
+
     blockPrint()
 
     time.sleep(3)
 
     entry_price = get_specific_positon(client, market).entryPrice
+    price_precision = get_price_precision(client, market)
 
     side = -1
     if order_side == "BUY":
@@ -277,15 +314,26 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     # submit_trailing_order(client, _market=market, _qty=qty, _side=stop_side,
     #                       _callbackRate=_callbackRate)
 
-    take_profit_price = round(entry_price * ((100 + _take_profit) / 100), 0)
-    execute_limit_order(client, entry_price, take_profit_price, qty, _market=market, _type="TAKE_PROFIT", _side=stop_side)
-    singlePrint(f"Take Profit ${take_profit_price} is created", std)
+    """********* STOP LOSS **********"""
+    if order_side == "SELL":
+        stop_loss = -stop_loss
+    stop_loss_raw = (entry_price * ((100 - stop_loss) / 100))
+    stop_loss_price = get_decimal_value(stop_loss_raw, price_precision)
+    execute_market_order(client, get_decimal_value(entry_price, price_precision), stop_loss_price, qty, _market=market,
+                         _type="STOP_MARKET", _side=stop_side)
+
+    singlePrint(f"Stop Loss ${stop_loss_price} is created", std)
 
     time.sleep(3)
 
-    stop_loss_price = round(entry_price * ((100 - _stop_loss) / 100), 0)
-    execute_limit_order(client, entry_price, stop_loss_price, qty, _market=market, _type="STOP", _side=stop_side)
-    singlePrint(f"Stop Loss ${stop_loss_price} is created", std)
+    """********* TAKE PROFIT **********"""
+    if order_side == "SELL":
+        take_profit = -take_profit
+    take_profit_raw = (entry_price * ((100 + take_profit) / 100))
+    take_profit_price = get_decimal_value(take_profit_raw, price_precision)
+    execute_limit_order(client, take_profit_price, qty, _market=market, _type="LIMIT", _side=stop_side)
+
+    singlePrint(f"Take Profit ${take_profit_price} is created", std)
 
     return qty, side, in_position
 
