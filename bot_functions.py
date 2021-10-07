@@ -214,8 +214,18 @@ def get_price_precision(client, _market="BTCUSDT"):
 
 # round the position size we can open to the precision of the market
 def round_to_precision(_qty, _precision):
-    new_qty = "{:0.0{}f}".format(_qty, _precision)
-    return float(new_qty)
+    """
+    Returns a value rounded down to a specific number of decimal places.
+    """
+    if not isinstance(_precision, int):
+        raise TypeError("decimal places must be an integer")
+    elif _precision < 0:
+        raise ValueError("decimal places has to be 0 or more")
+    elif _precision == 0:
+        return math.floor(_qty)
+
+    factor = 10 ** _precision
+    return float(math.floor(_qty * factor) / factor)
 
 
 # convert from client candle data into a set of lists
@@ -492,7 +502,6 @@ def scalp(dataframe):
     my_dict['ema_high'] = ta.EMA(dataframe, timeperiod=5, price='high')[999]
     my_dict['ema_close'] = ta.EMA(dataframe, timeperiod=5, price='close')[999]
     my_dict['ema_low'] = ta.EMA(dataframe, timeperiod=5, price='low')[999]
-    # my_dict['fastk'],  my_dict['fastd'] = ta.STOCHF(dataframe['high'], dataframe['low'], dataframe['close'], fastk_period=5, fastd_period=3, fastd_matype=0)
     fastk, fastd = ta.STOCHF(dataframe['high'], dataframe['low'], dataframe['close'],
                              fastk_period=5, fastd_period=3, fastd_matype=0)
     my_dict['fastd'] = fastd[999]
@@ -514,9 +523,7 @@ def scalp(dataframe):
 def get_signal(client, _market="BTCUSDT", _period="15m", use_last=False):
     candles = client.get_candlestick_data(_market, interval=_period, limit=1000)
     o, h, l, c, v = convert_candles(candles)
-    # h_o, h_h, h_l, h_c = construct_heikin_ashi(o, h, l, c)
     ohlcv = to_dataframe(o, h, l, c, v)
-    # entry = trading_signal(h_o, h_h, h_l, h_c, use_last)
     entry = scalp(ohlcv)
     return entry
 
