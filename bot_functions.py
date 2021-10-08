@@ -328,8 +328,16 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     if order_side == "SELL":
         stop_loss = -stop_loss
     stop_loss_raw = (entry_price * ((100 - stop_loss) / 100))
-    stop_loss_price = get_decimal_value(stop_loss_raw, price_precision)
-    execute_market_order(client, get_decimal_value(entry_price, price_precision), stop_loss_price, qty, _market=market,
+    stop_loss_price = 0
+    entry_price_decimal = 0
+    if stop_loss_raw < 1:
+        stop_loss_price = get_decimal_value(stop_loss_raw, price_precision)
+        entry_price_decimal = get_decimal_value(entry_price, price_precision)
+    else:
+        stop_loss_price = Decimal(int(stop_loss_raw))
+        entry_price_decimal = Decimal(int(entry_price))
+
+    execute_market_order(client, entry_price_decimal, stop_loss_price, qty, _market=market,
                          _type="STOP_MARKET", _side=stop_side)
 
     singlePrint(f"Stop Loss ${stop_loss_price} is created", std)
@@ -340,7 +348,11 @@ def handle_signal(client, std, market="BTCUSDT", leverage=3, order_side="BUY",
     if order_side == "SELL":
         take_profit = -take_profit
     take_profit_raw = (entry_price * ((100 + take_profit) / 100))
-    take_profit_price = get_decimal_value(take_profit_raw, price_precision)
+    take_profit_price = 0
+    if take_profit_raw < 1:
+        take_profit_price = get_decimal_value(take_profit_raw, price_precision)
+    else:
+        take_profit_price = Decimal(int(take_profit_raw))
     execute_limit_order(client, take_profit_price, qty, _market=market, _type="LIMIT", _side=stop_side)
 
     singlePrint(f"Take Profit ${take_profit_price} is created", std)
@@ -460,11 +472,30 @@ def trading_signal(h_o, h_h, h_l, h_c, use_last=False):
     return entry
 
 
-def trade(my_dict):
+def dictToString(dict):
+    return str(dict).replace(', ', '\r\n').replace("u'", "").replace("'", "")[1:-1]
+
+
+def trade(my_dict, std):
     entry = 0
+    enablePrint(std)
+    print("INDICATOR VALUES:")
+    print(dictToString(my_dict))
+    print("\n************* Long Position Check *******************")
+    print(
+        f"my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher'] --> {my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher']}")
+    print(f"my_dict['open'] < my_dict['ema_low'] --> {my_dict['open'] < my_dict['ema_low']}")
+    print(f"my_dict['macd'] > my_dict['macdsignal'] --> {my_dict['macd'] > my_dict['macdsignal']}")
+    print(f"my_dict['adx'] > 25 --> {my_dict['adx'] > 25}")
+    print(f"my_dict['mfi'] < 30 --> {my_dict['mfi'] < 30}")
+    print(f"my_dict['fastk'] < 30 --> {my_dict['fastk'] < 30}")
+    print(f"my_dict['fastd'] < 30 --> {my_dict['fastd'] < 30}")
+    print(f"my_dict['fastk'] > my_dict['fastd'] --> {my_dict['fastk'] > my_dict['fastd']}")
+    print(f"my_dict['cci'] < -150 --> {my_dict['cci'] < -150}")
     # Long condition
     if (my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher'] and
             my_dict['open'] < my_dict['ema_low'] and
+            my_dict['macd'] > my_dict['macdsignal'] and
             (my_dict['adx'] > 25) and
             (my_dict['mfi'] < 30) and
             (my_dict['fastk'] < 30) and
@@ -473,10 +504,25 @@ def trade(my_dict):
             (my_dict['cci'] < -150)
     ):
         entry = 1
+        print("************* Long Position Matched *******************")
+    else:
+        print("************* Long Position Not Matched *******************")
 
+    print("\n************* Short Position Check *******************")
+    print(
+        f"my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] --> {my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher']}")
+    print(f"my_dict['ema_high'] < my_dict['open'] --> {my_dict['ema_high'] < my_dict['open']}")
+    print(f"my_dict['macd'] < my_dict['macdsignal'] --> {my_dict['macd'] < my_dict['macdsignal']}")
+    print(f"my_dict['adx'] > 25 --> {my_dict['adx'] > 25}")
+    print(f"my_dict['mfi'] > 70 --> {my_dict['mfi'] > 70}")
+    print(f"my_dict['fastk'] > 70 --> {my_dict['fastk'] > 70}")
+    print(f"my_dict['fastd'] > 70 --> {my_dict['fastd'] > 70}")
+    print(f"my_dict['fastk'] < my_dict['fastd'] --> {my_dict['fastk'] < my_dict['fastd']}")
+    print(f"my_dict['cci'] > 150 --> {my_dict['cci'] > 150}")
     # Short Condition
     if (my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] and
             (my_dict['ema_high'] < my_dict['open']) and
+            my_dict['macd'] < my_dict['macdsignal'] and
             (my_dict['adx'] > 25) and
             (my_dict['mfi'] > 70) and
             (my_dict['fastk'] > 70) and
@@ -485,11 +531,15 @@ def trade(my_dict):
             (my_dict['cci'] > 150)
     ):
         entry = -1
+        print("************* Short Position Matched *******************")
+    else:
+        print("************* Short Position Not Matched *******************\n")
 
+    blockPrint()
     return entry
 
 
-def scalp(dataframe):
+def scalp(dataframe, std):
     my_dict = {}
     my_dict['ema_uptrendhigher'] = ta.EMA(dataframe, timeperiod=1000, price='close')[999]
     my_dict['ema_uptrendlower'] = ta.EMA(dataframe, timeperiod=250, price='high')[999]
@@ -511,30 +561,35 @@ def scalp(dataframe):
     my_dict['rsi'] = ta.RSI(dataframe, timeperiod=14)[999]
     my_dict['mfi'] = ta.MFI(dataframe)[999]
 
+    macd = ta.MACD(dataframe)
+    my_dict['macd'] = macd['macd'][999]
+    my_dict['macdsignal'] = macd['macdsignal'][999]
+    my_dict['macdhist'] = macd['macdhist'][999]
+
     my_dict['open'] = dataframe['open'].iloc[-1]
 
-    entry = trade(my_dict)
+    entry = trade(my_dict, std)
     print("****************inside the scalp*******************")
     return entry
 
 
 # get the data from the market, create heikin ashi candles and then generate signals
 # return the signals to the bot
-def get_signal(client, _market="BTCUSDT", _period="15m", use_last=False):
+def get_signal(client, _market="BTCUSDT", _period="15m", use_last=False, std=None):
     candles = client.get_candlestick_data(_market, interval=_period, limit=1000)
     o, h, l, c, v = convert_candles(candles)
     ohlcv = to_dataframe(o, h, l, c, v)
-    entry = scalp(ohlcv)
+    entry = scalp(ohlcv, std)
     return entry
 
 
 # get signal that is confirmed across multiple time scales
-def get_multi_scale_signal(client, _market="BTCUSDT", _periods=["1m"]):
+def get_multi_scale_signal(client, _market="BTCUSDT", _periods=["1m"], std=None):
     signal = 0
     use_last = True
 
     for i, v in enumerate(_periods):
-        _signal = get_signal(client, _market, _period=v, use_last=use_last)
+        _signal = get_signal(client, _market, _period=v, use_last=use_last, std=std)
         signal = signal + _signal
         time.sleep(3)
 
@@ -549,6 +604,7 @@ def calculate_position(client, _market="BTCUSDT", _leverage=1):
     qty = calculate_position_size(client, usdt_balance=usdt, _market=_market, _leverage=_leverage)
     precision = get_market_precision(client, _market=_market)
     qty = round_to_precision(qty, precision)
+    qty = get_decimal_value(qty, precision)
     return qty
 
 

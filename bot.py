@@ -34,13 +34,14 @@ side = 0
 # Initialise the market leverage and margin type.
 bf.initialise_futures(client, _market=market, _leverage=leverage)
 time.sleep(3)
+iteration = 1
 while True:
     try:
+        bf.singlePrint(f"ITERATION {iteration}:\n", std)
         # if not currently in a position then execute this set of logic
         if not in_position:
-
             # generate signal data for the last 1000 candles
-            entry = bf.get_multi_scale_signal(client, _market=market, _periods=confirmation_periods)
+            entry = bf.get_multi_scale_signal(client, _market=market, _periods=confirmation_periods, std=std)
             # entry = 1
 
             # if the entry is -1, then open a SHORT
@@ -57,18 +58,20 @@ while True:
                                                           order_side="BUY", stop_side="SELL",
                                                           take_profit=take_profit, stop_loss=stop_loss)
             else:
-                bf.singlePrint("Conditions not matched, no trade will be taken", std)
+                bf.singlePrint("Conditions not matched, no trade will be taken\n", std)
 
         # If already in a position then check market and wait for the trade to complete
         elif in_position:
             position_active = bf.check_in_position(client, market)
             if not position_active:
                 client.cancel_all_orders(market)
-                bf.singlePrint("There is no open trade currently, checking to enter a new trade.", std)
+                bf.singlePrint("There is no open trade currently, checking to enter a new trade.\n", std)
                 in_position = False
             else:
-                bf.singlePrint(f"There is an open trade in progress for {market}. No new trade will be attempted.", std)
-
+                bf.singlePrint(f"There is an open trade in progress for {market}. No new trade will be attempted.\n", std)
+        bf.singlePrint("*" * 100, std)
+        bf.singlePrint("", std)
+        iteration += 1
         time.sleep(10)
     except Exception as e:
         logger.error(str(e), exc_info=True)
