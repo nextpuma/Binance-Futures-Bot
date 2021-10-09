@@ -476,24 +476,34 @@ def dictToString(dict):
     return str(dict).replace(', ', '\r\n').replace("u'", "").replace("'", "")[1:-1]
 
 
+def print_condition(my_dict, ind1, ind2, symbol):
+    if isinstance(ind2, str):
+        print(f"{ind1} {symbol} {ind2} | {my_dict[ind1]} {symbol} {my_dict[ind2]} | {eval(str(my_dict[ind1]) + symbol + str(my_dict[ind2]))}")
+    else:
+        print(f"{ind1} {symbol} {ind2} | {my_dict[ind1]} {symbol} {ind2} | {eval(str(my_dict[ind1]) + symbol + str(ind2))}")
+
+
 def trade(my_dict, std):
     entry = 0
     enablePrint(std)
     print("INDICATOR VALUES:")
     print(dictToString(my_dict))
     print("\n************* Long Position Check *******************")
-    print(
-        f"my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher'] --> {my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher']}")
-    print(f"my_dict['open'] < my_dict['ema_low'] --> {my_dict['open'] < my_dict['ema_low']}")
-    print(f"my_dict['macd'] > my_dict['macdsignal'] --> {my_dict['macd'] > my_dict['macdsignal']}")
-    print(f"my_dict['adx'] > 25 --> {my_dict['adx'] > 25}")
-    print(f"my_dict['mfi'] < 30 --> {my_dict['mfi'] < 30}")
-    print(f"my_dict['fastk'] < 30 --> {my_dict['fastk'] < 30}")
-    print(f"my_dict['fastd'] < 30 --> {my_dict['fastd'] < 30}")
-    print(f"my_dict['fastk'] > my_dict['fastd'] --> {my_dict['fastk'] > my_dict['fastd']}")
-    print(f"my_dict['cci'] < -150 --> {my_dict['cci'] < -150}")
+    print_condition(my_dict, "ema_uptrendlower", "ema_uptrendhigher", "<")
+    print_condition(my_dict, "open", "ema_low", "<")
+    print_condition(my_dict, "macd", "macdsignal", ">")
+    print_condition(my_dict, "adx", 25, ">")
+    print_condition(my_dict, "mfi", 30, "<")
+    print_condition(my_dict, "fastk", 30, "<")
+    print_condition(my_dict, "fastd", 30, "<")
+    print_condition(my_dict, "fastk", "fastd", ">")
+    print_condition(my_dict, "cci", -150, "<")
+    print_condition(my_dict, "macdhist999", "macdhist998", "<")
+    print_condition(my_dict, "macdhist997", "macdhist998", "<")
     # Long condition
     if (my_dict['ema_uptrendlower'] < my_dict['ema_uptrendhigher'] and
+            (my_dict['macdhist997'] < my_dict['macdhist998']) and
+            (my_dict['macdhist999'] < my_dict['macdhist998']) and
             my_dict['open'] < my_dict['ema_low'] and
             my_dict['macd'] > my_dict['macdsignal'] and
             (my_dict['adx'] > 25) and
@@ -509,18 +519,22 @@ def trade(my_dict, std):
         print("************* Long Position Not Matched *******************")
 
     print("\n************* Short Position Check *******************")
-    print(
-        f"my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] --> {my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher']}")
-    print(f"my_dict['ema_high'] < my_dict['open'] --> {my_dict['ema_high'] < my_dict['open']}")
-    print(f"my_dict['macd'] < my_dict['macdsignal'] --> {my_dict['macd'] < my_dict['macdsignal']}")
-    print(f"my_dict['adx'] > 25 --> {my_dict['adx'] > 25}")
-    print(f"my_dict['mfi'] > 70 --> {my_dict['mfi'] > 70}")
-    print(f"my_dict['fastk'] > 70 --> {my_dict['fastk'] > 70}")
-    print(f"my_dict['fastd'] > 70 --> {my_dict['fastd'] > 70}")
-    print(f"my_dict['fastk'] < my_dict['fastd'] --> {my_dict['fastk'] < my_dict['fastd']}")
-    print(f"my_dict['cci'] > 150 --> {my_dict['cci'] > 150}")
+    print_condition(my_dict, "ema_downtrendlower", "ema_downtrendhigher", "<")
+    print_condition(my_dict, "ema_high", "open", "<")
+    print_condition(my_dict, "macd", "macdsignal", "<")
+    print_condition(my_dict, "adx", 25, ">")
+    print_condition(my_dict, "mfi", 70, ">")
+    print_condition(my_dict, "fastk", 70, ">")
+    print_condition(my_dict, "fastd", 70, ">")
+    print_condition(my_dict, "fastk", "fastd", "<")
+    print_condition(my_dict, "cci", 150, ">")
+    print_condition(my_dict, "macdhist999", "macdhist998", ">")
+    print_condition(my_dict, "macdhist997", "macdhist998", ">")
+
     # Short Condition
     if (my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] and
+            (my_dict['macdhist997'] > my_dict['macdhist998']) and
+            (my_dict['macdhist999'] > my_dict['macdhist998']) and
             (my_dict['ema_high'] < my_dict['open']) and
             my_dict['macd'] < my_dict['macdsignal'] and
             (my_dict['adx'] > 25) and
@@ -541,12 +555,12 @@ def trade(my_dict, std):
 
 def scalp(dataframe, std):
     my_dict = {}
-    my_dict['ema_uptrendhigher'] = ta.EMA(dataframe, timeperiod=1000, price='close')[999]
-    my_dict['ema_uptrendlower'] = ta.EMA(dataframe, timeperiod=250, price='high')[999]
+    my_dict['ema_uptrendhigher'] = ta.EMA(dataframe, timeperiod=200, price='close')[999]
+    my_dict['ema_uptrendlower'] = ta.EMA(dataframe, timeperiod=50, price='high')[999]
     my_dict['ema_suptrendhigher'] = ta.EMA(dataframe, timeperiod=9, price='low')[999]
     my_dict['ema_suptrendlower'] = ta.EMA(dataframe, timeperiod=3, price='high')[999]
-    my_dict['ema_downtrendhigher'] = ta.EMA(dataframe, timeperiod=1000, price='high')[999]
-    my_dict['ema_downtrendlower'] = ta.EMA(dataframe, timeperiod=250, price='low')[999]
+    my_dict['ema_downtrendhigher'] = ta.EMA(dataframe, timeperiod=200, price='high')[999]
+    my_dict['ema_downtrendlower'] = ta.EMA(dataframe, timeperiod=50, price='low')[999]
     my_dict['ema_sdowntrendhigher'] = ta.EMA(dataframe, timeperiod=9, price='high')[999]
     my_dict['ema_sdowntrendlower'] = ta.EMA(dataframe, timeperiod=3, price='low')[999]
     my_dict['ema_high'] = ta.EMA(dataframe, timeperiod=5, price='high')[999]
@@ -561,10 +575,13 @@ def scalp(dataframe, std):
     my_dict['rsi'] = ta.RSI(dataframe, timeperiod=14)[999]
     my_dict['mfi'] = ta.MFI(dataframe)[999]
 
-    macd = ta.MACD(dataframe)
+    # macd = ta.MACD(dataframe)
+    macd = ta.MACD(dataframe, fast_period=25, slow_period=30, signal_period=9, price='close')
     my_dict['macd'] = macd['macd'][999]
     my_dict['macdsignal'] = macd['macdsignal'][999]
-    my_dict['macdhist'] = macd['macdhist'][999]
+    my_dict['macdhist999'] = macd['macdhist'][999]
+    my_dict['macdhist998'] = macd['macdhist'][998]
+    my_dict['macdhist997'] = macd['macdhist'][997]
 
     my_dict['open'] = dataframe['open'].iloc[-1]
 
