@@ -500,7 +500,9 @@ def trade(my_dict, std):
     print("INDICATOR VALUES:")
     print(dictToString(my_dict))
     print("\n************* Long Position Check *******************")
-    print_condition(my_dict, "ema_uptrendlower", "ema_uptrendhigher", ">")
+    # print_condition(my_dict, "ema_uptrendlower", "ema_uptrendhigher", ">")
+    print_condition(my_dict, "ma_fiftylow", "current_price", "<")
+    print_condition(my_dict, "ma_nineclose", "current_price", "<")
     # print_condition(my_dict, "open", "ema_low", "<")
     # print_condition(my_dict, "macd", "macdsignal", ">")
     # print_condition(my_dict, "adx", 25, ">")
@@ -510,17 +512,28 @@ def trade(my_dict, std):
     # print_condition(my_dict, "fastk", "fastd", ">")
     # print_condition(my_dict, "cci", -150, "<")
     # print_condition(my_dict, "macdhist998", 0, "<")
+    print_condition(my_dict, "macdhist_current", 0, ">")
     print_condition(my_dict, "macdhist_last", 0, "<")
-    print_condition(my_dict, "macdhist_current", "macdhist_last", ">")
-    print_condition(my_dict, "macdhist_2ndlast", "macdhist_last", ">")
-    # print_condition(my_dict, "macdhist996", "macdhist997", "<")
+    # print_condition(my_dict, "macdhist_2ndlast", 0, "<")
+    # print_condition(my_dict, "macdhist_last", 0, "<")
+    # print_condition(my_dict, "macdhist_current", 0, "<")
+    # print_condition(my_dict, "macdhist_current", "macdhist_last", ">")
+    # print_condition(my_dict, "macdhist_2ndlast", "macdhist_last", ">")
+    # print_condition(my_
+    # 'dict, "macdhist996", "macdhist997", "<")
     # Long condition
-    if (my_dict['ema_uptrendlower'] > my_dict['ema_uptrendhigher'] and
-            (my_dict['macdhist_last'] < 0) and
+    if ((my_dict['ma_fiftylow'] < my_dict['current_price']) and
+            (my_dict['ma_nineclose'] < my_dict['current_price']) and
+            # (my_dict['current_price'] < my_dict['ema_low']) and
+            # my_dict['macdhist_2ndlast'] < 0) and
+            (my_dict['macdhist_current'] > 0) and
+            (my_dict['macdhist_last'] < 0)
+            # (my_dict['macdhist_last'] < 0) and
+            # (my_dict['macdhist_current'] < 0) and
             # (my_dict['macdhist998'] < 0) and
             # (my_dict['macdhist999'] < 0) and
-            (my_dict['macdhist_2ndlast'] > my_dict['macdhist_last']) and
-            (my_dict['macdhist_current'] > my_dict['macdhist_last'])
+            # (my_dict['macdhist_2ndlast'] > my_dict['macdhist_last']) and
+            # (my_dict['macdhist_current'] > my_dict['macdhist_last'])
             # my_dict['open'] < my_dict['ema_low'] and
             # my_dict['macd'] > my_dict['macdsignal'] and
             # (my_dict['adx'] > 25) and
@@ -536,7 +549,8 @@ def trade(my_dict, std):
         print("************* Long Position Not Matched *******************")
 
     print("\n************* Short Position Check *******************")
-    print_condition(my_dict, "ema_downtrendlower", "ema_downtrendhigher", "<")
+    print_condition(my_dict, "ma_fiftyhigh", "current_price", ">")
+    print_condition(my_dict, "ma_nineclose", "current_price", ">")
     # print_condition(my_dict, "ema_high", "open", "<")
     # print_condition(my_dict, "macd", "macdsignal", "<")
     # print_condition(my_dict, "adx", 25, ">")
@@ -547,16 +561,27 @@ def trade(my_dict, std):
     # print_condition(my_dict, "cci", 150, ">")
     # print_condition(my_dict, "macdhist998", 0, ">")
     # print_condition(my_dict, "macdhist998", 0, ">")
+    print_condition(my_dict, "macdhist_current", 0, "<")
     print_condition(my_dict, "macdhist_last", 0, ">")
-    print_condition(my_dict, "macdhist_2ndlast", "macdhist_last", "<")
-    print_condition(my_dict, "macdhist_current", "macdhist_last", "<")
+    # print_condition(my_dict, "macdhist_2ndlast", 0, ">")
+    # print_condition(my_dict, "macdhist_last", 0, ">")
+    # print_condition(my_dict, "macdhist_current", 0, ">")
+    # print_condition(my_dict, "macdhist_2ndlast", "macdhist_last", "<")
+    # print_condition(my_dict, "macdhist_current", "macdhist_last", "<")
 
     # Short Condition
-    if (my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] and
-            (my_dict['macdhist_last'] > 0) and
+    if ((my_dict['ma_fiftyhigh'] > my_dict['current_price']) and
+            (my_dict['ma_nineclose'] > my_dict['current_price']) and
+            (my_dict['macdhist_current'] < 0) and
+            (my_dict['macdhist_last'] > 0)
+            # my_dict['ema_downtrendlower'] < my_dict['ema_downtrendhigher'] and
+            # (my_dict['ema_high'] < my_dict['current_price']) and
+            # (my_dict['macdhist_2ndlast'] > 0) and
+            # (my_dict['macdhist_last'] > 0) and
+            # (my_dict['macdhist_current'] > 0) and
             # (my_dict['macdhist999'] > 0) and
-            (my_dict['macdhist_2ndlast'] < my_dict['macdhist_last']) and
-            (my_dict['macdhist_current'] < my_dict['macdhist_last'])
+            # (my_dict['macdhist_2ndlast'] < my_dict['macdhist_last']) and
+            # (my_dict['macdhist_current'] < my_dict['macdhist_last'])
             # (my_dict['ema_high'] < my_dict['open']) and
             # my_dict['macd'] < my_dict['macdsignal'] and
             # (my_dict['adx'] > 25) and
@@ -575,8 +600,12 @@ def trade(my_dict, std):
     return entry
 
 
-def scalp(dataframe, dataframe1m, std):
+def scalp(dataframe, dataframe1m, current_price, std):
     my_dict = {}
+    my_dict['ma_fiftyhigh'] = ta.MA(dataframe, timeperiod=50, price='high')[999]
+    my_dict['ma_fiftylow'] = ta.MA(dataframe, timeperiod=50, price='low')[999]
+    my_dict['ma_nineclose'] = ta.MA(dataframe, timeperiod=20, price='close')[999]
+
     my_dict['ema_uptrendhigher'] = ta.EMA(dataframe, timeperiod=200, price='close')[999]
     my_dict['ema_uptrendlower'] = ta.EMA(dataframe, timeperiod=50, price='high')[999]
     my_dict['ema_suptrendhigher'] = ta.EMA(dataframe, timeperiod=9, price='low')[999]
@@ -598,14 +627,23 @@ def scalp(dataframe, dataframe1m, std):
     my_dict['mfi'] = ta.MFI(dataframe)[999]
 
     correction = get_remainder_from_5thMinute() + 1
-    macd = ta.MACD(dataframe1m, fast_period=25, slow_period=30, signal_period=9, price='close')
-    my_dict['macd'] = macd['macd'][999]
-    my_dict['macdsignal'] = macd['macdsignal'][999 - correction]
-    my_dict['macdhist_current'] = macd['macdhist'][999 - correction]
-    my_dict['macdhist_last'] = macd['macdhist'][998 - correction * 2]
-    my_dict['macdhist_2ndlast'] = macd['macdhist'][997 - correction * 3]
+    # macd = ta.MACD(dataframe1m, fast_period=25, slow_period=30, signal_period=9, price='close')
+    # my_dict['macd'] = macd['macd'][999]
+    # my_dict['macdsignal'] = macd['macdsignal'][999 - correction]
+    # my_dict['macdhist_current'] = macd['macdhist'][999 - correction]
+    # my_dict['macdhist_last'] = macd['macdhist'][998 - correction * 2]
+    # my_dict['macdhist_2ndlast'] = macd['macdhist'][997 - correction * 3]
+
+    # sma macd
+    macd = ta.MACDEXT(dataframe, fast_matype=5, slow_period=7, signal_period=9, price='close')
+    my_dict['MACD'] = macd['macd'][999]
+    my_dict['macdsignal'] = macd['macdsignal'][999]
+    my_dict['macdhist_current'] = macd['macdhist'][999]
+    my_dict['macdhist_last'] = macd['macdhist'][998]
+    # my_dict['macdhist_2ndlast'] = macd['macdhist'][997 - correction * 3]
 
     my_dict['open'] = dataframe['open'].iloc[-1]
+    my_dict['current_price'] = current_price
 
     entry = trade(my_dict, std)
     return entry
@@ -621,9 +659,10 @@ def get_dataframe(candles):
 def get_signal(client, _market="BTCUSDT", _period="15m", use_last=False, std=None):
     candles = client.get_candlestick_data(_market, interval=_period, limit=1000)
     candles1m = client.get_candlestick_data(_market, interval="1m", limit=1000)
+    current_price = client.get_mark_price(_market).markPrice
     dataframe = get_dataframe(candles)
     dataframe1m = get_dataframe(candles1m)
-    entry = scalp(dataframe, dataframe1m, std)
+    entry = scalp(dataframe, dataframe1m, current_price, std)
     return entry
 
 
